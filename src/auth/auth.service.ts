@@ -1,26 +1,44 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+
+import * as bcrypt from 'bcrypt';
+
+import { RegisterDto } from './dto';
+import { User } from 'src/users/';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  async register(registerDto: RegisterDto) {
+    const { password, ...userData } = registerDto;
+    const userVerification = await this.userRepository.findOne({
+      where: { email: userData.email },
+    });
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+    if (userVerification)
+      throw new BadRequestException('El usuario con este correo ya existe');
+    try {
+      const user = this.userRepository.create({
+        ...userData,
+        password: bcrypt.hashSync(password, 10),
+      });
+      await this.userRepository.save(user);
+      delete user.password;
+      return user;
+    } catch (error) {
+      console.log(error);
+      this.handleDBErrors(error);
+    }
   }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  private handleDBErrors(error: any): never {
+    if (error.code == '23502') {
+      throw new BadRequestException(error.detail);
+    }
+    throw new BadRequestException('revisar los logs del servidor');
   }
 }
