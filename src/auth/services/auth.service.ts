@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 
-import { LoginDto, RegisterDto } from '../dto';
+import { ChangePasswordDto, LoginDto, RegisterDto } from '../dto';
 import { User } from 'src/users/';
 import { MyResponse } from 'src/core';
 import { JwtPayload, LoginResponse } from '../interfaces';
@@ -100,6 +100,11 @@ export class AuthService {
 
     return response;
   }
+
+  async changePassword(changePasswordDto: ChangePasswordDto) {
+    return changePasswordDto;
+  }
+
   private getJwtToken(payload: JwtPayload): string {
     const token = this.jwtService.sign(payload);
     return token;

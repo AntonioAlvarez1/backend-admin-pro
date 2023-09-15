@@ -1,7 +1,7 @@
 import { Controller, Post, Body } from '@nestjs/common';
 
 import { AuthService } from '../services/auth.service';
-import { LoginDto, RegisterDto } from '../dto';
+import { ChangePasswordDto, LoginDto, RegisterDto } from '../dto';
 
 import { User } from 'src/users';
 import { MyResponse } from 'src/core';
@@ -18,5 +18,9 @@ export class AuthController {
   @Post('login')
   login(@Body() loginDto: LoginDto): Promise<MyResponse<LoginResponse>> {
     return this.authService.login(loginDto);
+  }
+  @Post('change-password')
+  changePassword(@Body() changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(changePasswordDto);
   }
 }
