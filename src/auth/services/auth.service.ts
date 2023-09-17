@@ -73,16 +73,11 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Las credenciales no son validas');
 
-    if (!user.is_active)
-      throw new UnauthorizedException(
-        'Usuario no activo, hable con el administrador',
-      );
-
     delete user.password, delete user.is_active;
 
     const token = this.getJwtToken({
       sub: user.user_id,
-      email: user.email,
+      user: user.email,
     });
 
     const response: MyResponse<LoginResponse> = {
