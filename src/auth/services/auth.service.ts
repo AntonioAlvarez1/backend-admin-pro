@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { ChangePasswordDto, LoginDto, RegisterDto } from '../dto';
 import { User } from 'src/users/';
 import { MyResponse } from 'src/core';
-import { JwtPayload, LoginResponse } from '../interfaces';
+import { CheckTokenResponse, JwtPayload, LoginResponse } from '../interfaces';
 
 @Injectable()
 export class AuthService {
@@ -134,6 +134,25 @@ export class AuthService {
       console.log(error);
       this.handleDBErrors(error);
     }
+  }
+
+  checkToken(user: User): MyResponse<CheckTokenResponse> {
+    const token = this.getJwtToken({
+      sub: user.user_id,
+      user: user.email,
+    });
+
+    const response: MyResponse<CheckTokenResponse> = {
+      statusCode: 200,
+      status: 'Ok',
+      message: 'La Contraseña se cambio con éxito',
+      reply: {
+        user,
+        token,
+      },
+    };
+
+    return response;
   }
 
   private getJwtToken(payload: JwtPayload): string {
