@@ -27,7 +27,7 @@ export class UsersService {
     });
 
     if (!user)
-      throw new NotFoundException(`El usuario #${user_id} no fue encontrado`);
+      throw new NotFoundException(`El usuario #${user_id} no fue encotrado`);
 
     try {
       await this.userRepository.save(user);
@@ -46,10 +46,31 @@ export class UsersService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
-  }
+  async remove(user_id: string): Promise<MyResponse<Record<string, never>>> {
+    const user = await this.userRepository.preload({
+      user_id,
+      is_active: false,
+    });
 
+    if (!user)
+      throw new NotFoundException(`El usuario #${user_id} no fue encotrado`);
+
+    try {
+      await this.userRepository.save(user);
+
+      const response: MyResponse<Record<string, never>> = {
+        statusCode: 200,
+        status: 'Ok',
+        message: `El usuario ${user.email} fue inhabilitado correctamente`,
+        reply: {},
+      };
+
+      return response;
+    } catch (error) {
+      console.log(error);
+      this.handleDBErrors(error);
+    }
+  }
   private handleDBErrors(error: any): never {
     throw new BadRequestException(`El error: ${error.message}`);
   }

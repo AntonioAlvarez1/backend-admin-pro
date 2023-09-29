@@ -25,19 +25,23 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<MyResponse<User>> {
     const { password, ...userData } = registerDto;
+
     const userVerification = await this.userRepository.findOne({
       where: { email: userData.email },
     });
 
     if (userVerification)
-      throw new BadRequestException('El usuario con este correo ya existe');
+      throw new BadRequestException('El usuario con ese correo ya existe');
+
     try {
       const user = this.userRepository.create({
         ...userData,
         password: bcrypt.hashSync(password, 10),
       });
+
       await this.userRepository.save(user);
       delete user.password, delete user.is_active;
+
       const response: MyResponse<User> = {
         statusCode: 201,
         status: 'Created',
@@ -62,8 +66,8 @@ export class AuthService {
         password: true,
         first_name: true,
         last_name: true,
-        is_active: true,
         email: true,
+        is_active: true,
       },
     });
 
@@ -73,27 +77,29 @@ export class AuthService {
     if (!bcrypt.compareSync(password, user.password))
       throw new UnauthorizedException('Las credenciales no son validas');
 
-    delete user.password, delete user.is_active;
+    delete user.password;
 
-    const token = this.getJwtToken({
-      sub: user.user_id,
-      user: user.email,
-    });
+    if (user.is_active === false) {
+      throw new UnauthorizedException(
+        'El usuario no esta activo, comunicarse con un administrador',
+      );
+    } else {
+      const token = this.getJwtToken({
+        sub: user.user_id,
+        user: user.email,
+      });
+      const response: MyResponse<LoginResponse> = {
+        statusCode: 201,
+        status: 'Created',
+        message: 'Usuario encontrado con éxito',
+        reply: {
+          user,
+          token,
+        },
+      };
 
-    const response: MyResponse<LoginResponse> = {
-      statusCode: 201,
-      status: 'Created',
-      message: 'Usuario encontrado con éxito',
-      reply: {
-        user_id: user.user_id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        token,
-      },
-    };
-
-    return response;
+      return response;
+    }
   }
 
   async changePassword(
@@ -137,10 +143,7 @@ export class AuthService {
   }
 
   checkToken(user: User): MyResponse<CheckTokenResponse> {
-    const token = this.getJwtToken({
-      sub: user.user_id,
-      user: user.email,
-    });
+    const token = this.getJwtToken({ sub: user.user_id, user: user.email });
 
     const response: MyResponse<CheckTokenResponse> = {
       statusCode: 200,
@@ -161,9 +164,9 @@ export class AuthService {
   }
 
   private handleDBErrors(error: any): never {
-    if (error.code == '23502') {
+    if (error.code === '23502') {
       throw new BadRequestException(error.detail);
     }
-    throw new BadRequestException('revisar los logs del servidor');
+    throw new BadRequestException('Revisar los logs del servidor');
   }
 }
