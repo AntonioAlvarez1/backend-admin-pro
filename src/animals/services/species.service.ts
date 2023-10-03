@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
-import { Species } from '../entities';
+import { Biome, Species } from '../entities';
 import { Repository } from 'typeorm';
 import { CreateSpeciesDto } from '../dto';
 import { MyResponse } from 'src/core';
@@ -15,12 +15,15 @@ export class SpeciesService {
   constructor(
     @InjectRepository(Species)
     private readonly speciesRepository: Repository<Species>,
+
+    @InjectRepository(Biome)
+    private readonly biomeRepository: Repository<Biome>,
   ) {}
 
   async create(
     createSpeciesDto: CreateSpeciesDto,
   ): Promise<MyResponse<Species>> {
-    const { name, ...allData } = createSpeciesDto;
+    const { name, biome_id, ...allData } = createSpeciesDto;
 
     const speciesVerification = await this.speciesRepository.findOne({
       where: { name },
@@ -29,9 +32,14 @@ export class SpeciesService {
     if (speciesVerification)
       throw new BadRequestException(`La especie ${name} ya existe`);
 
+    const biome = await this.biomeRepository.findOneBy({ biome_id });
+
+    if (!biome) throw new BadRequestException(`El bioma ${name} no existe`);
+
     try {
       const species = this.speciesRepository.create({
         name,
+        biome,
         ...allData,
       });
       await this.speciesRepository.save(species);
