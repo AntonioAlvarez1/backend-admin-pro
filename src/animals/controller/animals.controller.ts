@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { AnimalsService } from '../services';
 import { CreateAnimalDto } from '../dto';
 import { MyResponse } from 'src/core';
@@ -20,9 +28,11 @@ export class AnimalsController {
     return this.animalsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.animalsService.findOne(+id);
+  @Get(':animal_id')
+  findOne(
+    @Param('animal_id', ParseUUIDPipe) animal_id: string,
+  ): Promise<MyResponse<Animal>> {
+    return this.animalsService.findOne(animal_id);
   }
 
   // @Patch(':id')

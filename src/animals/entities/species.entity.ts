@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Animal } from './animal.entity';
-import { Biome } from './biome';
+import { Biome } from './biome.entity';
 
 @Entity('species')
 export class Species {

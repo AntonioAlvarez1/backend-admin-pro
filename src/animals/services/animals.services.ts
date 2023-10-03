@@ -55,8 +55,21 @@ export class AnimalsService {
     return `This action returns all animals`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} animal`;
+  async findOne(animal_id: string): Promise<MyResponse<Animal>> {
+    const animal = await this.animalRepository.findOne({
+      where: { animal_id },
+      relations: ['species', 'species.biome'],
+    });
+
+    if (!animal)
+      throw new NotFoundException(`El animal #${animal_id} no fue encontrado.`);
+    const response: MyResponse<Animal> = {
+      statusCode: 200,
+      status: 'Ok',
+      message: `El animal #${animal.name} fue encontrado con exito`,
+      reply: animal,
+    };
+    return response;
   }
 
   update(id: number) {
