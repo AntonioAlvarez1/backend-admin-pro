@@ -9,6 +9,7 @@ import { CreateAnimalDto } from '../dto/create-animal.dto';
 import { Animal, Species } from '../entities';
 import { Repository } from 'typeorm';
 import { MyResponse } from 'src/core';
+import { UpdateAnimalDto } from '../dto';
 
 @Injectable()
 export class AnimalsService {
@@ -51,8 +52,19 @@ export class AnimalsService {
     }
   }
 
-  findAll() {
-    return `This action returns all animals`;
+  async findAll(): Promise<MyResponse<Animal[]>> {
+    const animals: Animal[] = await this.animalRepository.find({
+      where: { is_alive: true },
+    });
+
+    const response: MyResponse<Animal[]> = {
+      statusCode: 200,
+      status: 'Ok',
+      message: 'Lista de animales',
+      reply: animals,
+    };
+
+    return response;
   }
 
   async findOne(animal_id: string): Promise<MyResponse<Animal>> {
@@ -72,14 +84,60 @@ export class AnimalsService {
     return response;
   }
 
-  update(id: number) {
-    return `This action updates a #${id} animal`;
+  async update(
+    animal_id: string,
+    updateAnimalDto: UpdateAnimalDto,
+  ): Promise<MyResponse<Animal>> {
+    const animal = await this.animalRepository.preload({
+      animal_id,
+      ...updateAnimalDto,
+    });
+
+    if (!animal)
+      throw new NotFoundException(`El animal #${animal_id} no fue encontrado`);
+
+    try {
+      await this.animalRepository.save(animal);
+
+      const response: MyResponse<Animal> = {
+        statusCode: 200,
+        status: 'Ok',
+        message: `El animal ${animal.name} fue actualizado correctamente`,
+        reply: animal,
+      };
+
+      return response;
+    } catch (error) {
+      console.log(error);
+      this.handleDBErrors(error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} animal`;
-  }
+  async remove(animal_id: string): Promise<MyResponse<Record<string, never>>> {
+    const animal = await this.animalRepository.preload({
+      animal_id,
+      is_alive: false,
+    });
 
+    if (!animal)
+      throw new NotFoundException(`El animal #${animal_id} no fue encontrado`);
+
+    try {
+      await this.animalRepository.save(animal);
+
+      const response: MyResponse<Record<string, never>> = {
+        statusCode: 200,
+        status: 'Ok',
+        message: `El animal ${animal.name} fue dado de baja correctamente`,
+        reply: {},
+      };
+
+      return response;
+    } catch (error) {
+      console.log(error);
+      this.handleDBErrors(error);
+    }
+  }
   private handleDBErrors(error: any): never {
     throw new BadRequestException(`Error: ${error.detail}`);
   }
