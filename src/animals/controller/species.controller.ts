@@ -10,8 +10,10 @@ import { SpeciesService } from '../services';
 import { CreateSpeciesDto } from '../dto/create-species.dto';
 import { MyResponse } from 'src/core';
 import { Species } from '../entities';
+import { Auth } from 'src/auth';
 
 @Controller('species')
+@Auth()
 export class SpeciesController {
   constructor(private readonly speciesService: SpeciesService) {}
 
